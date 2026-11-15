@@ -25,12 +25,13 @@ jobs:
         if: always()
         run: |
           AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
-          for f in $(find . -path "*build/outputs/apk/debug/*.apk"); do
-            echo "### $f" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            $AAPT dump badging "$f" | grep -E "^package|sdkVersion|native-code" >> $GITHUB_STEP_SUMMARY || true
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          done
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | tail -1)
+          f=$(find . -name "*arm64*debug.apk" | head -1)
+          echo "### $f" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          $AAPT dump badging "$f" 2>&1 | grep -iE "^package|sdkversion|native-code" | fold -w 70 >> $GITHUB_STEP_SUMMARY || true
+          $APKSIGNER verify --verbose "$f" 2>&1 | head -12 | fold -w 70 >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         with:
           name: BlackBox-apk-${{ github.run_number }}
