@@ -21,14 +21,14 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
-      - name: Diagnostico do manifesto
+      - name: Quem abre e como se chama
         if: always()
         run: |
           AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
           f=$(find . -name "*arm64*debug.apk" | head -1)
-          echo "### Manifesto" >> $GITHUB_STEP_SUMMARY
+          echo "### O que o APK novo diz" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          $AAPT dump xmltree "$f" --file AndroidManifest.xml 2>&1 | grep -iE "testOnly|sharedUserId|debuggable|installLocation|E: permission |E: uses-library" | fold -w 70 | head -40 >> $GITHUB_STEP_SUMMARY || true
+          $AAPT dump badging "$f" 2>&1 | grep -E "^application-label:|^launchable-activity|^application-icon-" | fold -w 70 | head -12 >> $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         with:
