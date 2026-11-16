@@ -20,7 +20,17 @@ jobs:
       - name: Compilar
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          set +e
+          ./gradlew assembleDebug > build.log 2>&1
+          code=$?
+          {
+            echo '### Resumo do erro'
+            echo '```'
+            grep -E "^e: |error: |Manifest merger|What went wrong" build.log | fold -w 80 | head -30
+            grep -A6 "What went wrong" build.log | fold -w 80 | head -20
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
+          exit $code
       - name: Quem abre e como se chama
         if: always()
         run: |
@@ -28,7 +38,7 @@ jobs:
           f=$(find . -name "*arm64*debug.apk" | head -1)
           echo "### O que o APK novo diz" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          $AAPT dump badging "$f" 2>&1 | grep -E "^application-label:|^launchable-activity|^application-icon-" | fold -w 70 | head -12 >> $GITHUB_STEP_SUMMARY || true
+          $AAPT dump badging "$f" 2>&1 | grep -E "^application-label:|^launchable-activity" | fold -w 70 | head -6 >> $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         with:
