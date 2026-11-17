@@ -15,7 +15,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import top.niunaijun.blackboxa.view.main.WelcomeActivity
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.security.MessageDigest
@@ -200,13 +199,19 @@ class CalculatorActivity : Activity() {
                 justEvaluated = false
                 if (key[0].isDigit()) {
                     val tail = expr.takeLast(8)
-                    if (tail.length == 8 && tail.all { it.isDigit() } && store.verify(tail)) {
-                        expr = ""
-                        result = ""
-                        refresh()
-                        startActivity(Intent(this, WelcomeActivity::class.java))
-                        finish()
-                        return
+                    if (tail.length == 8 && tail.all { it.isDigit() } && !store.isLocked()) {
+                        if (store.verify(tail)) {
+                            store.registerSuccess()
+                            expr = ""
+                            result = ""
+                            refresh()
+                            startActivity(Intent(this, PainelActivity::class.java))
+                            finish()
+                            return
+                        } else {
+                            val before = expr.length > 8 && expr[expr.length - 9].isDigit()
+                            if (!before) store.registerFail()
+                        }
                     }
                 }
             }
@@ -217,6 +222,7 @@ class CalculatorActivity : Activity() {
 
 private class Store(context: Context) {
     private val prefs = context.getSharedPreferences("privaci_auth", Context.MODE_PRIVATE)
+    private val lockPrefs = context.getSharedPreferences("privaci_lock", Context.MODE_PRIVATE)
 
     fun isSet() = prefs.contains("hash") && prefs.contains("salt")
 
@@ -233,6 +239,27 @@ private class Store(context: Context) {
         val h = prefs.getString("hash", null) ?: return false
         val salt = Base64.decode(s, Base64.NO_WRAP)
         return MessageDigest.isEqual(Base64.decode(h, Base64.NO_WRAP), derive(password, salt))
+    }
+
+    fun isLocked(): Boolean = System.currentTimeMillis() < lockPrefs.getLong("until", 0L)
+
+    fun registerFail() {
+        val fails = lockPrefs.getInt("fails", 0) + 1
+        if (fails >= 5) {
+            val level = lockPrefs.getInt("level", 0)
+            val minutes = 5L shl minOf(level, 6)
+            lockPrefs.edit()
+                .putInt("fails", 0)
+                .putInt("level", level + 1)
+                .putLong("until", System.currentTimeMillis() + minutes * 60_000L)
+                .apply()
+        } else {
+            lockPrefs.edit().putInt("fails", fails).apply()
+        }
+    }
+
+    fun registerSuccess() {
+        lockPrefs.edit().clear().apply()
     }
 
     private fun derive(password: String, salt: ByteArray): ByteArray {
