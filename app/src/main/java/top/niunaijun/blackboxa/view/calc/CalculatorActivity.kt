@@ -2,6 +2,7 @@ package top.niunaijun.blackboxa.view.calc
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -14,7 +15,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import top.niunaijun.blackboxa.view.main.MainActivity
+import top.niunaijun.blackboxa.view.main.WelcomeActivity
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.security.MessageDigest
@@ -203,7 +204,7 @@ class CalculatorActivity : Activity() {
                         expr = ""
                         result = ""
                         refresh()
-                        MainActivity.start(this)
+                        startActivity(Intent(this, WelcomeActivity::class.java))
                         finish()
                         return
                     }
