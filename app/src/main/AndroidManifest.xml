@@ -34,6 +34,11 @@
         </activity>
 
         <activity
+            android:name=".view.calc.PainelActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
+        <activity
             android:name=".view.fake.FollowMyLocationOverlay"
             android:exported="false" />
         <activity android:name=".view.setting.SettingActivity" />
